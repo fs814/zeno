@@ -1,0 +1,58 @@
+diff --git i/include/zensim/CMakeLists.txt w/include/zensim/CMakeLists.txt
+index 92e74ce0..49942553 100644
+--- i/include/zensim/CMakeLists.txt
++++ w/include/zensim/CMakeLists.txt
+@@ -554,7 +554,7 @@ if(ZS_ENABLE_CUDA)
+ 
+     # https://stackoverflow.com/questions/64523302/cuda-missing-return-statement-at-end-of-non-void-function-in-constexpr-if-fun
+     # https://docs.nvidia.com/cuda/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior
+-    PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: --extended-lambda --expt-relaxed-constexpr --default-stream=per-thread $<IF:$<CXX_COMPILER_ID:MSVC>, -Xcompiler="/bigobj", > -Xcudafe "--display_error_number --diag_suppress=implicit_return_from_non_void_function --diag_suppress=loop_not_reachable --diag_suppress=69 --diag_suppress=2642 --diag_suppress=1394" > # -dlto -Xptxas -dlcm=cg
++    PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: --extended-lambda --expt-relaxed-constexpr --default-stream=per-thread $<IF:$<CXX_COMPILER_ID:MSVC>, -Xcompiler=/bigobj -Xcompiler=/Zc:preprocessor, > -Xcudafe "--display_error_number --diag_suppress=implicit_return_from_non_void_function --diag_suppress=loop_not_reachable --diag_suppress=69 --diag_suppress=2642 --diag_suppress=1394" > # -dlto -Xptxas -dlcm=cg
+     # lto issue: https://forums.developer.nvidia.com/t/using-dlink-time-opt-together-with-gencode-in-cmake/165224
+   )
+ 
+@@ -653,6 +653,11 @@ if(ZS_ENABLE_CUDA)
+   target_sources(zpc
+     PRIVATE resource/cuda/ExecutionPolicy.cu
+   )
++  # CUDA 13 cccl headers force MSVC standard preprocessor; mirror the option set
++  # used by zpccuda so .cu files compiled into the zpc target also see /Zc:preprocessor.
++  target_compile_options(zpc
++    PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: $<IF:$<CXX_COMPILER_ID:MSVC>, -Xcompiler=/bigobj -Xcompiler=/Zc:preprocessor, > >
++  )
+   # target_sources(zpc PRIVATE $<TARGET_OBJECTS:zpccuda>)
+   # target_link_libraries(zpc PUBLIC zpc_cuda_deps)
+ endif(ZS_ENABLE_CUDA)
+@@ -1118,7 +1123,7 @@ if(ZS_ENABLE_CUDA AND ZS_ENABLE_ZENO_CU_WRANGLE)
+     CUDA_SEPARABLE_COMPILATION ON
+     CUDA_RESOLVE_DEVICE_SYMBOLS ON # https://devblogs.nvidia.com/building-cuda-applications-cmake/
+     CUDA_PTX_COMPILATION ON # https://stackoverflow.com/questions/55993745/how-should-i-get-cmake-to-also-create-ptx-files-for-my-kernels
+-    CUDA_ARCHITECTURES 52
++    CUDA_ARCHITECTURES 75
+ 
+     # CUDA_VISIBILITY_PRESET default
+   )
+diff --git i/include/zensim/cuda/memory/MemOps.cpp w/include/zensim/cuda/memory/MemOps.cpp
+index 7a9a5431..8008ae94 100644
+--- i/include/zensim/cuda/memory/MemOps.cpp
++++ w/include/zensim/cuda/memory/MemOps.cpp
+@@ -188,9 +188,15 @@ namespace zs {
+           fmt::format("advise(tag um_mem_tag, advice {}, addr {}, bytes {}, devid {})\n", advice,
+                       addr, bytes, (int)did));
+     if (Cuda::context(did).supportConcurrentUmAccess)
+-      if (bytes > 0)
++      if (bytes > 0) {
+         // cudri::memAdvise(addr, bytes, (unsigned int)option, (int)did);
+-        cuMemAdvise((CUdeviceptr)addr, bytes, (CUmem_advise)option, (CUdevice)did);
++        // CUDA 12.2+ changed cuMemAdvise (now cuMemAdvise_v2) to take CUmemLocation
++        // instead of a raw CUdevice. Build the location struct from the device id.
++        CUmemLocation loc{};
++        loc.type = CU_MEM_LOCATION_TYPE_DEVICE;
++        loc.id = (int)did;
++        cuMemAdvise((CUdeviceptr)addr, bytes, (CUmem_advise)option, loc);
++      }
+   }
+ 
+ }  // namespace zs
+\ No newline at end of file
+Submodule include/zensim/zpc_tpls contains modified content

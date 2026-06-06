@@ -1,5 +1,6 @@
 #include <base_elastic_model.h>
 #include <base_force_model.h>
+#include <cassert>
 #include <cmath>
 
 

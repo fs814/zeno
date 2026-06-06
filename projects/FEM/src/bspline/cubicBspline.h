@@ -2,6 +2,7 @@
 #define CUBIC_B_SPLINE_HPP
 
 #include <matrix_helper.hpp>
+#include <cassert>
 #include <cmath>
 
 class UniformCubicBasisSpline {

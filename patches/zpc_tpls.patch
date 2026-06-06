@@ -1,0 +1,42 @@
+diff --git i/CMakeLists.txt w/CMakeLists.txt
+index 3b6f439..b9b0c9b 100644
+--- i/CMakeLists.txt
++++ w/CMakeLists.txt
+@@ -51,7 +51,7 @@ if(ZS_ENABLE_CUDA)
+         add_library(zpc_cuda_arch_options INTERFACE)
+ 
+         if(NOT EXISTS ZS_CUDA_ARCH)
+-            set(ZS_CUDA_ARCH 52)
++            set(ZS_CUDA_ARCH 75)
+         endif()
+ 
+         # ref: https://gitlab.kitware.com/cmake/cmake/-/issues/19199
+@@ -111,7 +111,7 @@ if(ZS_ENABLE_CUDA)
+                 separate_arguments(ZS_CUDA_ARCH)
+                 message(STATUS "deduced cuda arch: ${ZS_CUDA_ARCH}")
+ 
+-                list(APPEND ZS_CUDA_ARCH 52)
++                list(APPEND ZS_CUDA_ARCH 75)
+ 
+                 foreach(CU_ARCH ${ZS_CUDA_ARCH})
+                     message(STATUS "appending flag for cuda arch: ${CU_ARCH}")
+diff --git i/fmt/format.h w/fmt/format.h
+index 7637c8a..f3ae285 100644
+--- i/fmt/format.h
++++ w/fmt/format.h
+@@ -3268,10 +3268,11 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
+   // The kth entry is chosen to be the smallest integer such that the
+   // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
+   // It is equal to ceil(2^31 + 2^32/10^(k + 1)).
+-  // These are stored in a string literal because we cannot have static arrays
+-  // in constexpr functions and non-static ones are poorly optimized.
+-  return U"\x9999999a\x828f5c29\x80418938\x80068db9\x8000a7c6\x800010c7"
+-         U"\x800001ae\x8000002b"[index];
++  constexpr uint32_t thresholds[] = {
++    0x9999999au, 0x828f5c29u, 0x80418938u, 0x80068db9u,
++    0x8000a7c6u, 0x800010c7u, 0x800001aeu, 0x8000002bu,
++  };
++  return thresholds[index];
+ }
+ 
+ template <typename Float>

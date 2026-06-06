@@ -1,0 +1,5 @@
+patches/libigl.patch	projects/cgmesh/libigl
+patches/zpc.patch	projects/CUDA/zpc
+patches/zpc_tpls.patch	projects/CUDA/zpc/include/zensim/zpc_tpls
+patches/zpc_jit_zpc.patch	projects/CUDA/zpc_jit/pyzpc/zpc_jit/zpc
+patches/zpc_jit_zpc_tpls.patch	projects/CUDA/zpc_jit/pyzpc/zpc_jit/zpc/include/zensim/zpc_tpls

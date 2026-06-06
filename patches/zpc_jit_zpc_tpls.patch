@@ -1,0 +1,22 @@
+diff --git i/CMakeLists.txt w/CMakeLists.txt
+index 8527245..8ca4b02 100644
+--- i/CMakeLists.txt
++++ w/CMakeLists.txt
+@@ -51,7 +51,7 @@ if(ZS_ENABLE_CUDA)
+         add_library(zpc_cuda_arch_options INTERFACE)
+ 
+         if(NOT EXISTS ZS_CUDA_ARCH)
+-            set(ZS_CUDA_ARCH 52)
++            set(ZS_CUDA_ARCH 75)
+         endif()
+ 
+         # ref: https://gitlab.kitware.com/cmake/cmake/-/issues/19199
+@@ -111,7 +111,7 @@ if(ZS_ENABLE_CUDA)
+                 separate_arguments(ZS_CUDA_ARCH)
+                 message(STATUS "deduced cuda arch: ${ZS_CUDA_ARCH}")
+ 
+-                list(APPEND ZS_CUDA_ARCH 52)
++                list(APPEND ZS_CUDA_ARCH 75)
+ 
+                 foreach(CU_ARCH ${ZS_CUDA_ARCH})
+                     message(STATUS "appending flag for cuda arch: ${CU_ARCH}")
