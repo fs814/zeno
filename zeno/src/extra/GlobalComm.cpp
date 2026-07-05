@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <fstream>
 #include <cassert>
+#include <chrono>
+#include <thread>
 #include <zeno/types/UserData.h>
 #include <unordered_set>
 #include <zeno/types/MaterialObject.h>
@@ -443,7 +445,7 @@ bool GlobalComm::fromDiskByStampinfo(std::string cachedir, int frameid, GlobalCo
     }
     const auto& load = [&lasttwo, &dir, &newFrameStampInfo](std::string cachedir, int frameid, GlobalComm::ViewObjects& objs, std::string& runtype)->bool {
         if (cachedir.empty())
-            return nullptr;
+            return false;
 
         cachepath[0] = dir / "lightCameraObj.zencache";
         cachepath[1] = dir / "materialObj.zencache";

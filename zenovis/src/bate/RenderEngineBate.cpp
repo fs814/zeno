@@ -49,7 +49,7 @@ struct RenderEngineBate : RenderEngine {
             return;
         }
         auto guard = setupState();
-        CHECK_GL(glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE));
+        opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
         glDepthFunc(GL_GREATER);
         CHECK_GL(glClearDepth(0.0));
         CHECK_GL(glClearColor(scene->drawOptions->bgcolor.r, scene->drawOptions->bgcolor.g,

@@ -72,7 +72,7 @@ struct PrimitiveHighlight : IGraphicDraw {
     }
 
     virtual void draw() override {
-        CHECK_GL(glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE));
+        opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
         glDepthFunc(GL_GREATER);
         CHECK_GL(glClearDepth(0.0));
         if (scene->get_select_mode() == PICK_MODE::PICK_OBJECT) {

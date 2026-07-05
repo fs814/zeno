@@ -72,10 +72,7 @@ class NodeSyncMgr {
                 QString key = curve_util::getCurveKey(idx);
                 if (curves.contains(key))
                 {
-                    auto& curve = curves[key];
-                    auto pMainWin = zenoApp->getMainWindow();
-                    ZASSERT_EXIT(pMainWin, false);
-                    auto pTimeline = pMainWin->timeline();
+                    auto& curve = curves[key];                    auto pTimeline = zenoApp ? zenoApp->findChild<ZTimeline*>() : nullptr;
                     ZASSERT_EXIT(pTimeline, false);
                     int x = pTimeline->value();
                     if (curve_util::updateCurve(QPointF(x, new_value[idx]), curve))

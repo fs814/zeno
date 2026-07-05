@@ -13,14 +13,24 @@ Copyright (c) 2018 Xavier "Crashoz" Launey
 #include <sstream>
 #include <cstdint>
 #include <memory>
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+#define UUIDV4_USE_X86_SIMD 1
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include <immintrin.h>
+#else
+#define UUIDV4_USE_X86_SIMD 0
+#endif
 
 #include "endianness.h"
 
 namespace UUIDv4 {
+
+#if UUIDV4_USE_X86_SIMD
 
 /*
   Converts a 128-bits unsigned int to an UUIDv4 string representation.
@@ -230,6 +240,174 @@ class UUID {
     alignas(128) uint8_t data[16];
 };
 
+#else
+
+class UUID {
+  public:
+    UUID()
+    {
+      std::memset(data, 0, sizeof(data));
+    }
+
+    UUID(const UUID &other)
+    {
+      std::memcpy(data, other.data, sizeof(data));
+    }
+
+    UUID(uint64_t x, uint64_t y)
+    {
+      store64(data, x);
+      store64(data + 8, y);
+    }
+
+    UUID(const uint8_t* bytes)
+    {
+      std::memcpy(data, bytes, sizeof(data));
+    }
+
+    explicit UUID(const std::string &bytes)
+    {
+      std::memset(data, 0, sizeof(data));
+      std::memcpy(data, bytes.data(), std::min(bytes.size(), sizeof(data)));
+    }
+
+    static UUID fromStrFactory(const std::string &s)
+    {
+      return fromStrFactory(s.c_str());
+    }
+
+    static UUID fromStrFactory(const char* raw)
+    {
+      UUID uuid;
+      uuid.fromStr(raw);
+      return uuid;
+    }
+
+    void fromStr(const char* raw)
+    {
+      std::memset(data, 0, sizeof(data));
+      for (size_t i = 0, j = 0; raw[i] != '\0' && j < sizeof(data);) {
+        if (raw[i] == '-') {
+          ++i;
+          continue;
+        }
+        uint8_t hi = hex(raw[i++]);
+        uint8_t lo = raw[i] == '\0' ? 0 : hex(raw[i++]);
+        data[j++] = static_cast<uint8_t>((hi << 4) | lo);
+      }
+    }
+
+    UUID& operator=(const UUID &other)
+    {
+      if (&other != this) {
+        std::memcpy(data, other.data, sizeof(data));
+      }
+      return *this;
+    }
+
+    friend bool operator==(const UUID &lhs, const UUID &rhs)
+    {
+      return std::memcmp(lhs.data, rhs.data, sizeof(lhs.data)) == 0;
+    }
+
+    friend bool operator<(const UUID &lhs, const UUID &rhs)
+    {
+      return std::memcmp(lhs.data, rhs.data, sizeof(lhs.data)) < 0;
+    }
+
+    friend bool operator!=(const UUID &lhs, const UUID &rhs) { return !(lhs == rhs); }
+    friend bool operator> (const UUID &lhs, const UUID &rhs) { return rhs < lhs; }
+    friend bool operator<=(const UUID &lhs, const UUID &rhs) { return !(lhs > rhs); }
+    friend bool operator>=(const UUID &lhs, const UUID &rhs) { return !(lhs < rhs); }
+
+    std::string bytes() const
+    {
+      std::string mem;
+      bytes(mem);
+      return mem;
+    }
+
+    void bytes(std::string &out) const
+    {
+      out.assign(reinterpret_cast<const char*>(data), sizeof(data));
+    }
+
+    void bytes(char* bytes) const
+    {
+      std::memcpy(bytes, data, sizeof(data));
+    }
+
+    std::string str() const
+    {
+      std::string mem;
+      str(mem);
+      return mem;
+    }
+
+    void str(std::string &s) const
+    {
+      s.resize(36);
+      str(&s[0]);
+    }
+
+    void str(char *res) const
+    {
+      std::snprintf(res, 37,
+        "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
+        data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
+    }
+
+    friend std::ostream& operator<< (std::ostream& stream, const UUID& uuid)
+    {
+      return stream << uuid.str();
+    }
+
+    friend std::istream& operator>> (std::istream& stream, UUID& uuid)
+    {
+      std::string s;
+      stream >> s;
+      uuid = fromStrFactory(s);
+      return stream;
+    }
+
+    size_t hash() const
+    {
+      const uint64_t a = load64(data);
+      const uint64_t b = load64(data + 8);
+      return a ^ (b + 0x9e3779b9 + (a << 6) + (a >> 2));
+    }
+
+  private:
+    static void store64(uint8_t* out, uint64_t value)
+    {
+      for (int i = 7; i >= 0; --i) {
+        out[7 - i] = static_cast<uint8_t>((value >> (i * 8)) & 0xff);
+      }
+    }
+
+    static uint64_t load64(const uint8_t* in)
+    {
+      uint64_t value = 0;
+      for (size_t i = 0; i < 8; ++i) {
+        value = (value << 8) | in[i];
+      }
+      return value;
+    }
+
+    static uint8_t hex(char c)
+    {
+      if (c >= '0' && c <= '9') return static_cast<uint8_t>(c - '0');
+      if (c >= 'a' && c <= 'f') return static_cast<uint8_t>(c - 'a' + 10);
+      if (c >= 'A' && c <= 'F') return static_cast<uint8_t>(c - 'A' + 10);
+      return 0;
+    }
+
+    alignas(16) uint8_t data[16];
+};
+
+#endif
+
 /*
   Generates UUIDv4 from a provided random generator (c++11 <random> module)
   std::mt19937_64 is highly recommended as it has a SIMD implementation that
@@ -250,12 +428,25 @@ class UUIDGenerator {
     /* Generates a new UUID */
     UUID getUUID() {
       // The two masks set the uuid version (4) and variant (1)
+#if UUIDV4_USE_X86_SIMD
       const __m128i and_mask = _mm_set_epi64x(0xFFFFFFFFFFFFFF3Full, 0xFF0FFFFFFFFFFFFFull);
       const __m128i or_mask =  _mm_set_epi64x(0x0000000000000080ull, 0x0040000000000000ull);
       __m128i n = _mm_set_epi64x(distribution(*generator), distribution(*generator));
       __m128i uuid = _mm_or_si128(_mm_and_si128(n, and_mask), or_mask);
 
       return UUID(uuid);
+#else
+      uint8_t bytes[16];
+      uint64_t a = distribution(*generator);
+      uint64_t b = distribution(*generator);
+      for (int i = 7; i >= 0; --i) {
+        bytes[7 - i] = static_cast<uint8_t>((a >> (i * 8)) & 0xff);
+        bytes[15 - i] = static_cast<uint8_t>((b >> (i * 8)) & 0xff);
+      }
+      bytes[6] = static_cast<uint8_t>((bytes[6] & 0x0f) | 0x40);
+      bytes[8] = static_cast<uint8_t>((bytes[8] & 0x3f) | 0x80);
+      return UUID(bytes);
+#endif
     }
 
   private:

@@ -1,5 +1,6 @@
 # cmake files
 build/
+build-macos/
 ninja/
 cmake-build-*/
 Debug/

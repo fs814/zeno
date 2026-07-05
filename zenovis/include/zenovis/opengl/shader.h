@@ -20,11 +20,45 @@ static std::string shader_add_line_info(std::string const &source) {
     return res;
 }
 
+static void shader_replace_all(std::string &source,
+                               std::string const &from,
+                               std::string const &to) {
+    size_t pos = 0;
+    while ((pos = source.find(from, pos)) != std::string::npos) {
+        source.replace(pos, from.size(), to);
+        pos += to.size();
+    }
+}
+
+static std::string shader_translate_legacy_glsl_for_core(GLuint type,
+                                                         std::string const &source) {
+#ifdef __APPLE__
+    if (source.find("#version 120") == std::string::npos) {
+        return source;
+    }
+
+    std::string translated = source;
+    if (type == GL_VERTEX_SHADER) {
+        shader_replace_all(translated, "#version 120",
+                           "#version 150\n#define attribute in\n#define varying out");
+    } else if (type == GL_FRAGMENT_SHADER) {
+        shader_replace_all(translated, "#version 120",
+                           "#version 150\n#define varying in\nout vec4 zenoFragColor;\n#define gl_FragColor zenoFragColor\n#define texture2D texture\n#define texture2DRect texture");
+    } else {
+        shader_replace_all(translated, "#version 120", "#version 150");
+    }
+    return translated;
+#else
+    return source;
+#endif
+}
+
 struct Shader : zeno::disable_copy {
     GLuint sha;
+    GLuint type;
     GLuint target{GL_ARRAY_BUFFER};
 
-    Shader(GLuint type) {
+    Shader(GLuint type_) : type(type_) {
         CHECK_GL(sha = glCreateShader(type));
     }
 
@@ -33,7 +67,8 @@ struct Shader : zeno::disable_copy {
     }
 
     void compile(std::string const &source) const {
-        const GLchar *src = source.c_str();
+        std::string compileSource = shader_translate_legacy_glsl_for_core(type, source);
+        const GLchar *src = compileSource.c_str();
         CHECK_GL(glShaderSource(sha, 1, &src, nullptr));
         CHECK_GL(glCompileShader(sha));
         int status = GL_TRUE;
@@ -45,7 +80,7 @@ struct Shader : zeno::disable_copy {
             CHECK_GL(glGetShaderInfoLog(sha, logLength, &logLength, log.data()));
             log[logLength] = 0;
             std::string err = "Error compiling shader:\n" +
-                                  shader_add_line_info(source) + "\n" +
+                                  shader_add_line_info(compileSource) + "\n" +
                                   log.data();
             throw zeno::makeError(std::move(err));
         }

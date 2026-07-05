@@ -9,6 +9,7 @@
 #include "zenovis/opengl/texture.h"
 #include "zenovis/opengl/vao.h"
 #include "zenovis/DrawOptions.h"
+#include <algorithm>
 
 namespace zenovis {
 
@@ -116,11 +117,15 @@ struct FrameBufferRender {
         w = scene->camera->m_nx;
         h = scene->camera->m_ny;
 
+        GLint maxSamples = 1;
+        CHECK_GL(glGetIntegerv(GL_MAX_SAMPLES, &maxSamples));
+        int framebufferSamples = std::max(1, std::min(samples, maxSamples));
+
         // generate picking texture
         picking_texture = make_unique<Texture>();
         picking_texture->target = GL_TEXTURE_2D_MULTISAMPLE;
         CHECK_GL(glBindTexture(picking_texture->target, picking_texture->tex));
-        CHECK_GL(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, w, h, GL_TRUE));
+        CHECK_GL(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, framebufferSamples, GL_RGB8, w, h, GL_TRUE));
         CHECK_GL(glBindTexture(picking_texture->target, 0));
         CHECK_GL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, picking_texture->tex, 0));
 
@@ -128,7 +133,7 @@ struct FrameBufferRender {
         depth_texture = make_unique<Texture>();
         depth_texture->target = GL_TEXTURE_2D_MULTISAMPLE;
         CHECK_GL(glBindTexture(depth_texture->target, depth_texture->tex));
-        CHECK_GL(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH_COMPONENT32F, w, h, GL_TRUE));
+        CHECK_GL(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, framebufferSamples, GL_DEPTH_COMPONENT32F, w, h, GL_TRUE));
         CHECK_GL(glBindTexture(depth_texture->target, 0));
         CHECK_GL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth_texture->tex, 0));
 

@@ -458,7 +458,7 @@ static void drawSceneDepthSafe(float aspRatio, float sampleweight, bool reflect,
       // }
       CHECK_GL(glClearDepth(0));
       CHECK_GL(glClear(GL_DEPTH_BUFFER_BIT));
-      glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+      zenovis::opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
       glEnable(GL_DEPTH_TEST);
       glDepthFunc(GL_GEQUAL);
       proj = MakeInfReversedZProjRH(glm::radians(g_fov), aspRatio, 0.01f);
@@ -471,7 +471,7 @@ static void drawSceneDepthSafe(float aspRatio, float sampleweight, bool reflect,
         grid->draw(false, 0.0);
       }
       CHECK_GL(glClearDepth(1));
-      glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
+      zenovis::opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
       glDepthFunc(GL_LESS);
 }
 extern void setReflectionViewID(int i);

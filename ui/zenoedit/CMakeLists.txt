@@ -85,6 +85,9 @@ if (WIN32)
                 ${CMAKE_CURRENT_SOURCE_DIR}/./thr/libs/x64/static/release/libcurl.lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/./thr/libs/x64/static/release/libssl.lib)
     endif()
+else()
+    find_package(CURL REQUIRED)
+    target_link_libraries(zenoedit PRIVATE CURL::libcurl)
 endif()
 
 target_include_directories(zenoedit PRIVATE . .. ./thr/include)

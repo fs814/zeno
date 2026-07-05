@@ -1489,7 +1489,7 @@ void ZenoMainWindow::onZenovisFrameUpdate(bool bGLView, int frameid)
 
 void ZenoMainWindow::onCheckUpdate()
 {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
     return;
 #else
     ZCheckUpdateDlg dlg(this);

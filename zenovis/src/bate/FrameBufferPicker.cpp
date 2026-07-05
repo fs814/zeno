@@ -312,7 +312,7 @@ struct FrameBufferPicker : IPicker {
                 if (scene->get_select_mode() == PICK_MODE::PICK_OBJECT) {
                     pick_particle = prim->tris->empty() && prim->quads->empty() && prim->polys->empty() && prim->loops->empty();
                     CHECK_GL(glEnable(GL_DEPTH_TEST));
-                    CHECK_GL(glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE));
+                    opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
                     glDepthFunc(GL_GREATER);
                     CHECK_GL(glClearDepth(0.0));
 
@@ -346,7 +346,7 @@ struct FrameBufferPicker : IPicker {
                 if (scene->get_select_mode() == PICK_MODE::PICK_VERTEX || pick_particle) {
                     // ----- enable depth test -----
                     CHECK_GL(glEnable(GL_DEPTH_TEST));
-                    CHECK_GL(glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE));
+                    opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
                     glDepthFunc(GL_GREATER);
                     CHECK_GL(glClearDepth(0.0));
                     // CHECK_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -390,7 +390,7 @@ struct FrameBufferPicker : IPicker {
                 if (scene->get_select_mode() == PICK_MODE::PICK_LINE) {
                     // ----- enable depth test -----
                     CHECK_GL(glEnable(GL_DEPTH_TEST));
-                    CHECK_GL(glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE));
+                    opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
                     glDepthFunc(GL_GREATER);
                     CHECK_GL(glClearDepth(0.0));
                     // CHECK_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -457,7 +457,7 @@ struct FrameBufferPicker : IPicker {
                 if (scene->get_select_mode() == PICK_MODE::PICK_MESH) {
                     // ----- enable depth test -----
                     CHECK_GL(glEnable(GL_DEPTH_TEST));
-                    CHECK_GL(glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE));
+                    opengl::clipControlIfAvailable(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
                     glDepthFunc(GL_GREATER);
                     CHECK_GL(glClearDepth(0.0));
                     // CHECK_GL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));

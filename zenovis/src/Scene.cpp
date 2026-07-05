@@ -22,8 +22,12 @@
 namespace zenovis {
 
 void Scene::loadGLAPI(void *procaddr) {
+#ifdef __APPLE__
+    int res = gladLoadGL();
+#else
     int res = gladLoadGLLoader((GLADloadproc)procaddr);
-    if (res < 0)
+#endif
+    if (res == 0)
         zeno::log_error("failed to load OpenGL via GLAD: {}", res);
 }
 

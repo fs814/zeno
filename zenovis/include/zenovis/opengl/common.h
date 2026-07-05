@@ -59,4 +59,10 @@ static void _check_opengl_error(const char *file, int line, const char *hint) {
         ::zenovis::opengl::_check_opengl_error(__FILE__, __LINE__, #x); \
     } while (0)
 
+inline void clipControlIfAvailable(GLenum origin, GLenum depth) {
+    if (glad_glClipControl) {
+        CHECK_GL(glClipControl(origin, depth));
+    }
+}
+
 } // namespace zenovis::opengl
